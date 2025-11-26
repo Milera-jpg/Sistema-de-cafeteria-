@@ -1,0 +1,147 @@
+/* MODEL CLIENTE */
+package model;
+public class Cliente {
+    private String nome;
+    private String telefone;
+
+    public Cliente(String nome, String telefone) {
+        this.nome = nome;
+        this.telefone = telefone;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+}
+
+/* MODEL PEDIDO */
+package model;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+
+public class Pedido {
+    private final int id;
+    private final Cliente cliente;
+    private final ArrayList<Produto> produtos;
+    private final LocalDateTime data;
+    private boolean pago;
+
+    public Pedido(int id, Cliente cliente) {
+        this.id = id;
+        this.cliente = cliente;
+        this.produtos = new ArrayList<>();
+        this.data = LocalDateTime.now();
+        this.pago = false;
+    }
+
+    public void adicionarProduto(Produto produto) {
+        produtos.add(produto);
+    }
+
+    public boolean removerProduto(String nomeProduto) {
+        if (produtos.isEmpty()) {
+            System.out.println("Não há produtos para remover do pedido!");
+            return false;
+        }
+        Produto produtoRemovido = produtos.removeLast();
+        System.out.println(produtoRemovido.getNome() + " removido do pedido!");
+        return true;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public ArrayList<Produto> getProdutos() {
+        return produtos;
+    }
+
+    public LocalDateTime getData() {
+        return data;
+    }
+
+    public boolean Pago() {
+        return pago;
+    }
+
+    public void setPago(boolean pago) {
+        this.pago = pago;
+    }
+}
+
+/* MODEL CAIXA */
+package model;
+import java.util.ArrayList;
+
+//controle de finanças
+public class Caixa {
+    private double totalDia;
+    private final ArrayList<Pedido> pedidosPagos;
+    private int contadorPedidos;
+
+    public Caixa() {
+        this.totalDia = 0.0;
+        this.pedidosPagos = new ArrayList<>();
+        this.contadorPedidos = 0;
+    }
+
+    public double calcTotal(Pedido pedido){
+            double total = 0.0;
+            for (Produto produto : pedido.getProdutos()) {
+                total += produto.getValor();
+            }
+            return total;
+    }
+
+    public void zerarCaixa(){
+        this.totalDia = 0.0;
+        this.pedidosPagos.clear();
+        this.contadorPedidos = 0;
+        System.out.println("Caixa zerado!");
+    }
+
+    public void pagamento(Pedido pedido, String formaPagamento){
+        if(pedido.Pago()){
+        System.out.println("Pedido já está pago!");
+        return;
+        }
+        double totalPedido = calcTotal(pedido);
+        pedido.setPago(true);
+        pedidosPagos.add(pedido);
+        totalDia += totalPedido;
+        contadorPedidos++;
+
+        System.out.println("Forma de pagamento: " + formaPagamento + " - Valor: R$ " + String.format("%.2f", totalPedido));
+    }
+
+    public double getTotalDia() {
+        return totalDia;
+    }
+
+    public ArrayList<Pedido> getPedidosPagos() {
+        return pedidosPagos;
+    }
+
+    public int getContadorPedidosPagos() {
+        return contadorPedidos;
+    }
+
+    public int getContadorPedidos() {
+        return contadorPedidos;
+    }
+}
+
