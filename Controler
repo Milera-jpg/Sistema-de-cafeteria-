@@ -1,0 +1,282 @@
+package controller;
+
+import model.*;
+import view.CafeView;
+
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class CafeController {
+    private final Caixa caixa;
+    private final CafeView view;
+    private final ArrayList<Cliente> clientes;
+    private final ArrayList<Produto> cardapio;
+    private final ArrayList<Pedido> pedidos;
+    private int proximoIdPedido;
+
+    public CafeController() {
+        this.caixa = new Caixa();
+        this.view = new CafeView();
+        this.clientes = new ArrayList<>();
+        this.cardapio = new ArrayList<>();
+        this.pedidos = new ArrayList<>();
+        this.proximoIdPedido = 1;
+        inicializarCardapio();
+    }
+
+    private void inicializarCardapio() {
+        cardapio.add(new Latte());
+        cardapio.add(new Expresso());
+        cardapio.add(new Mocha());
+        cardapio.add(new Produto("Bolo", 5.0F));
+        cardapio.add(new Produto("Salgado", 6.0F));
+    }
+
+    public int cadastrarCliente(Scanner scanner) {
+        System.out.print("Nome do cliente: ");
+        String nome = scanner.nextLine();
+
+        Cliente clienteExistente = buscarCliente(nome);
+
+        if (clienteExistente != null) {
+            view.mostrarMensagem("Cliente " + nome + " já está cadastrado!");
+
+            for (Pedido pedido : pedidos) {
+                if (pedido.getCliente().getNome().equalsIgnoreCase(nome) && !pedido.Pago()) {
+                    view.mostrarMensagem("Cliente já possui comanda em aberto: #" + pedido.getId());
+                    return pedido.getId();
+                }
+            }
+            Pedido novaComanda = new Pedido(proximoIdPedido, clienteExistente);
+            pedidos.add(novaComanda);
+            int idComanda = proximoIdPedido;
+            proximoIdPedido++;
+            return idComanda;
+        }
+
+        System.out.print("Telefone: ");
+        String telefone = scanner.nextLine();
+        Cliente novoCliente = new Cliente(nome, telefone);
+        clientes.add(novoCliente);
+
+        Pedido novaComanda = new Pedido(proximoIdPedido, novoCliente);
+        pedidos.add(novaComanda);
+        int idComanda = proximoIdPedido;
+        proximoIdPedido++;
+
+        view.mostrarMensagem("Cliente cadastrado com sucesso!");
+        return idComanda;
+    }
+
+    public Cliente buscarCliente(String nome) {
+        for (Cliente cliente : clientes) {
+            if (cliente.getNome().equalsIgnoreCase(nome)) return cliente;
+        }
+        return null;
+    }
+
+    public int criarNovaComanda(String nomeCliente) {
+        Cliente cliente = buscarCliente(nomeCliente);
+        if (cliente == null) {
+            view.mostrarMensagem("Cliente não encontrado! Cadastre o cliente primeiro.");
+            return -1;
+        }
+
+        for (Pedido pedido : pedidos) {
+            if (pedido.getCliente().getNome().equalsIgnoreCase(nomeCliente) && !pedido.Pago()) {
+                view.mostrarMensagem("Cliente já possui uma comanda em aberto: #" + pedido.getId());
+                return pedido.getId(); // Retorna o ID da comanda existente
+            }
+        }
+
+        Pedido novaComanda = new Pedido(proximoIdPedido, cliente);
+        pedidos.add(novaComanda);
+        int idComanda = proximoIdPedido;
+        proximoIdPedido++;
+
+        view.mostrarMensagem("Nova comanda criada: #" + idComanda + " para " + nomeCliente);
+        return idComanda;
+    }
+
+    public void removerProduto(int idPedido, String nomeProduto) {
+        Pedido pedido = buscarPedido(idPedido);
+        if (pedido == null) {
+            view.mostrarMensagem("Pedido não encontrado!");
+            return;
+        }
+
+        if (pedido.Pago()) {
+            view.mostrarMensagem("Não é possível remover produtos de um pedido já pago!");
+            return;
+        }
+
+        if (pedido.getProdutos().isEmpty()) {
+            view.mostrarMensagem("O pedido não possui produtos para remover!");
+            return;
+        }
+
+        boolean removido = pedido.removerProduto(nomeProduto);
+        if (removido) {
+            view.mostrarMensagem("Produto '" + nomeProduto + "' removido do pedido #" + idPedido);
+
+            double novoTotal = caixa.calcTotal(pedido);
+            view.mostrarMensagem("Novo total do pedido: R$ " + String.format("%.2f", novoTotal));
+        } else {
+            view.mostrarMensagem("Produto '" + nomeProduto + "' não encontrado no pedido!");
+        }
+    }
+
+    //busca por uma comanda
+    public Pedido buscarPedido(int idPedido) {
+        for (Pedido pedido : pedidos) {
+            if (pedido.getId() == idPedido) return pedido;
+        }
+        return null;
+    }
+
+    public void adicionarProdutoPedido(int idPedido, int idProduto) {
+        Pedido pedido = buscarPedido(idPedido);
+        if (pedido == null) {
+            view.mostrarMensagem("Pedido não encontrado!");
+            return;
+        }
+
+        if (idProduto < 0 || idProduto >= cardapio.size()) {
+            view.mostrarMensagem("Produto inválido!");
+            return;
+        }
+
+        Produto produto = cardapio.get(idProduto);
+        boolean produtoJaExiste = false;
+        int quantidadeAtual = 1;
+
+        pedido.adicionarProduto(produto);
+
+        view.mostrarMensagem(produto.getNome() + " adicionado ao pedido #" + idPedido);
+
+        if (produto instanceof Bebida) {
+            ((Bebida) produto).preparar();
+        }
+    }
+
+    public void exibirComanda(int idComanda) {
+        model.Pedido pedido = buscarPedido(idComanda);
+        if (pedido == null) {
+            view.mostrarMensagem("Comanda não existe!");
+            return;
+        }
+
+        ArrayList<Pedido> pedidosDoCliente = new ArrayList<>();
+        for (Pedido p : pedidos) {
+            if (p.getCliente().getNome().equalsIgnoreCase(pedido.getCliente().getNome())) {
+                pedidosDoCliente.add(p);
+            }
+        }
+        view.mostrarComanda(pedido.getCliente(), pedidosDoCliente, caixa);
+    }
+
+    public void processarPagamento(int idPedido, String formaPagamento) {
+        Pedido pedido = buscarPedido(idPedido);
+        if (pedido == null) {
+            view.mostrarMensagem("Pedido não encontrado!");
+            return;
+        }
+
+        caixa.pagamento(pedido, formaPagamento);
+    }
+
+    public void consultarTotalPedido(int idPedido) {
+        Pedido pedido = buscarPedido(idPedido);
+        if (pedido == null) {
+            view.mostrarMensagem("Pedido não encontrado!");
+            return;
+        }
+
+        double total = caixa.calcTotal(pedido);
+        view.mostrarMensagem("Total do pedido #" + idPedido + ": R$ " + String.format("%.2f", total));
+    }
+
+    public void gerarRelatorioFinal() {
+        System.out.println("RELATÓRIO FINAL DO DIA:");
+        double totalDia = caixa.getTotalDia();
+        int pedidosPagos = caixa.getContadorPedidosPagos();
+        int totalPedidos = pedidos.size();
+        int pedidosAbertos = totalPedidos - pedidosPagos;
+
+        System.out.println("\nTotal vendido: R$ " + String.format("%.2f", totalDia) +"\nTotal de pedidos: " + totalPedidos);
+
+        System.out.println("\nCLIENTES ATENDIDOS HOJE:");
+        if (clientes.isEmpty()) {
+            System.out.println("   Nenhum cliente atendido hoje.");
+        } else {
+            for (Cliente cliente : clientes) {
+                int pedidosDoCliente = 0;
+                for (Pedido pedido : pedidos) {
+                    if (pedido.getCliente().getNome().equals(cliente.getNome())) {
+                        pedidosDoCliente++;
+                    }
+                }
+                System.out.println("   " + cliente.getNome() + " - " + pedidosDoCliente + " pedido(s)");
+            }
+        }
+    }
+
+    public void mostrarTodosPedidos() {
+        if (pedidos.isEmpty()) {
+            view.mostrarMensagem("Nenhum pedido cadastrado.");
+            return;
+        }
+
+        System.out.println("\n= TODOS OS PEDIDOS =");
+
+        for (Pedido pedido : pedidos) {
+            double total = caixa.calcTotal(pedido);
+            String status = pedido.Pago() ? "PAGO" : "EM ABERTO";
+
+            System.out.println(" Pedido #" + pedido.getId() +
+                    " | Cliente: " + pedido.getCliente().getNome() +
+                    " | Itens: " + pedido.getProdutos().size() +
+                    " | Total: R$ " + String.format("%.2f", total) +
+                    " | Status: " + status);
+
+            if (!pedido.getProdutos().isEmpty()) {
+                System.out.println("   Produtos:");
+                for (Produto produto : pedido.getProdutos()) {
+                    System.out.println("     - " + produto.getNome() + " R$ " +
+                            String.format("%.2f", produto.getValor()));
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    public void mostraraCardapio(){
+        view.mostrarCardapio(cardapio);
+    }
+
+    public boolean verificarFechar() {
+        boolean temPedidosPendentes = false;
+
+        for (Pedido pedido : pedidos) {
+            if (!pedido.Pago()) {
+                if (!temPedidosPendentes) {
+                    System.out.println("\nNÃO É POSSÍVEL FECHAR O CAFÉ!" + "\nPEDIDOS EM ABERTO:");
+                    temPedidosPendentes = true;
+                }
+
+                double total = caixa.calcTotal(pedido);
+                System.out.println("Comanda #" + pedido.getId() +
+                        " - " + pedido.getCliente().getNome() +
+                        " - R$ " + String.format("%.2f", total));
+            }
+        }
+
+        if (!temPedidosPendentes) {
+            System.out.println("Todos os pedidos estão pagos! Fechando cafe...");
+            return true;
+        } else {
+            System.out.println("\nProcesse os pagamentos pendentes antes de fechar.");
+            return false; 
+        }
+    }
+}
