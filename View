@@ -1,0 +1,80 @@
+package view;
+
+import model.Caixa;
+import model.Cliente;
+import model.Pedido;
+import model.Produto;
+
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class CafeView {
+    private final Scanner scanner;
+
+    public CafeView() {
+        this.scanner = new Scanner(System.in);
+    }
+
+    public void mostrarCardapio(ArrayList<Produto> produtos) {
+        System.out.println("\n=== CARDÁPIO ===");
+        for (int i = 0; i < produtos.size(); i++) {
+            Produto produto = produtos.get(i);
+            System.out.println("ID:" + i + " - " + produto.getNome() + " - R$ " + String.format("%.2f", produto.getValor()));
+        }
+    }
+
+    public void mostrarMensagem(String mensagem) {
+        System.out.println(mensagem);
+    }
+
+    public void mostrarComanda(Cliente cliente, ArrayList<Pedido> pedidos, Caixa caixa) {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("COMANDA DO CLIENTE: " + cliente.getNome().toUpperCase());
+        System.out.println("TELEFONE: " + cliente.getTelefone());
+        System.out.println("=".repeat(50));
+
+        double totalGeral = 0.0;
+        boolean PedidosAbertos = false;
+
+        for (Pedido pedido : pedidos) {
+            System.out.println("\n--- PEDIDO #" + pedido.getId() + " ---");
+            System.out.println("Data: " + pedido.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            System.out.println("Status: " + (pedido.Pago() ? "PAGO" : "EM ABERTO"));
+
+            if (!pedido.Pago()) {
+                PedidosAbertos = true;
+            }
+
+            double totalPedido = caixa.calcTotal(pedido);
+            System.out.println("Itens:");
+
+            if (pedido.getProdutos().isEmpty()) {
+                System.out.println("  Nenhum produto adicionado");
+            } else {
+                for (Produto produto : pedido.getProdutos()) {
+                    System.out.printf("  %-15s R$ %6.2f%n", produto.getNome(), produto.getValor());
+                }
+            }
+            System.out.printf("TOTAL DO PEDIDO: R$ %6.2f%n", totalPedido);
+            if (!pedido.Pago()) {
+                totalGeral += totalPedido;
+            }
+        }
+        System.out.println("\n" + "=".repeat(50));
+        if (PedidosAbertos) {
+            System.out.printf("TOTAL A PAGAR: R$ %6.2f%n", totalGeral);
+        } else {
+            System.out.println("COMANDA ESTA PAGA!");
+        }
+        System.out.println("=".repeat(50));
+    }
+
+
+    public void exibirRelatorio(double totalVendas, int quantidadePedidos) {
+        System.out.println("\n=== RELATÓRIO DO DIA ===" + 
+                "\nTotal de vendas: R$ " + String.format("%.2f", totalVendas )+
+                "\nQuantidade de pedidos pagos: " + quantidadePedidos);
+    }
+}
+
