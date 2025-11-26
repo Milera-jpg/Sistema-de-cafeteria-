@@ -1,0 +1,73 @@
+//MODEL PRODUTOS
+package model;
+public class Produto {
+    private String nome;
+    private float valor;
+
+    public Produto(String nome, float valor) {
+        this.nome = nome;
+        this.valor = valor;
+    }
+    public Produto() {}
+    public String getNome() {
+        return nome;
+    }
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+    public float getValor() {
+        return valor;
+    }
+    public void setValor(float valor) {
+        this.valor = valor;
+    }
+}
+
+//MODEL BEBIDAS
+package model;
+public class Bebida extends Produto{
+    public Bebida(){
+        super();
+    }
+    public Bebida(String nome, float preco) {
+        super(nome, preco);
+    }
+    public void preparar(){}
+}
+
+//MODEL EXPRESSO
+package model;
+public class Expresso extends Bebida {
+    public Expresso() {
+        super("Expresso", 6.0f);
+    }
+
+    @Override
+    public void preparar() {
+        System.out.println("Extraindo um espresso forte e aromático!");
+    }
+}
+
+//MODEL LATTE 
+package model;
+public class Latte extends Bebida{
+    public Latte() {
+        super("Latte", 12.0f);
+    }
+    @Override
+    public void preparar() {
+        System.out.println("Vaporizando leite e adicionando ao espresso – preparando um Latte!");
+    }
+}
+
+//MODEL MOCHA
+package model;
+public class Mocha extends Bebida{
+    public Mocha() {
+        super("Mocha", 14.0f);
+    }
+    @Override
+    public void preparar(){
+        System.out.println("Misturando café, leite vaporizado e chocolate – preparando um Mocha!");
+    }
+}
