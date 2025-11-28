@@ -1,0 +1,53 @@
+// CONTROLLER 
+//METODO QUE EXTREVE O RESUMO DOS DIA EM UM TXT
+ublic void gerarNotinhaFiscal() {
+        String nomeArquivo = "notinhaCafe" + java.time.LocalDate.now() + ".txt";
+        String caminhoCompleto = new java.io.File(nomeArquivo).getAbsolutePath();
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(nomeArquivo))) {
+            writer.write("========================================\n" +
+                    "           CAFE DESTINO\n" +"========================================\n"+
+                    "Data: " + java.time.LocalDate.now() + "\n\n"+"PRODUTOS VENDIDOS HOJE:\n" +
+                    "-----------------------\n");
+
+            Map<String, Integer> produtosVendidos = new HashMap<>();
+
+            for (Pedido pedido : pedidos) {
+                for (Produto produto : pedido.getProdutos()) {
+                    String nomeProduto = produto.getNome();
+                    produtosVendidos.put(nomeProduto, produtosVendidos.getOrDefault(nomeProduto, 0) + 1);
+                }
+            }
+
+            for (Map.Entry<String, Integer> entry : produtosVendidos.entrySet()) {
+                writer.write(entry.getKey() + ": " + entry.getValue() + "x");
+            }
+            writer.write("\n\nRESUMO DO DIA:\n" + "-----------------------\n");
+
+            int totalComandas = pedidos.size();
+            double totalDinheiro = caixa.getTotalDia();
+
+            writer.write("Total de comandas: " + totalComandas +"\nTotal arrecadado: R$ " + String.format("%.2f\n", totalDinheiro)+
+           "========================================\n"+ "    Obrigado pela preferência!\n"+
+            "========================================\n");
+        } catch (IOException e) {
+            System.out.println("Erro ao salvar notinha: " + e.getMessage());
+        }
+    }
+
+//MAIN 
+//ALTERAÇÃO NO METODO >fecharCafe< INCLUINDO CHAMADA DO METODO ACIMA >gerarRelatorioFinal<
+private static void fecharCafe(CafeController controller, Scanner scanner) {
+        boolean podeFechar = controller.verificarFechar();
+        if (!podeFechar) {
+            System.out.println("Pressione Enter para voltar ao menu...");
+            scanner.nextLine();
+            return;
+        }
+        System.out.println("FECHANDO O CAFÉ");
+
+        controller.gerarRelatorioFinal();
+        System.out.println("\nAté amanhã!");
+        scanner.close();
+        System.exit(0);
+    }
